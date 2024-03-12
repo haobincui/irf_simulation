@@ -7,8 +7,8 @@ $ python script_test_bench.py
 
 ## dependencies
 - python=3.10
-- numpy
-- pytorch == 
+- numpy==1.26.3'
+- torch==2.1.2
 
 ## test reuslts
 - test1, nboot = 399
