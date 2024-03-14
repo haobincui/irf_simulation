@@ -20,7 +20,14 @@ original script took 1.5724365711212158 seconds
 Using device: cuda
 gpu array script took 1.5913772583007812 seconds
 
+# matlab
+Using nboot:
+   399
 
+Original Script, Compile on Execution
+Elapsed time is 1.335735 seconds.
+GPU Script, Compile on Execution
+Elapsed time is 4.970961 seconds.
 
 ```
 
@@ -31,6 +38,15 @@ Loaded inputs
 original script took 39.14391088485718 seconds
 Using device: cuda
 gpu array script took 23.954208850860596 seconds
+
+# matlab
+Using nboot:
+       10000
+
+Original Script, Compile on Execution
+Elapsed time is 36.517406 seconds.
+GPU Script, Compile on Execution
+Elapsed time is 110.462466 seconds.
 ```
 
 
@@ -41,6 +57,16 @@ Loaded inputs
 original script took 386.21000719070435 seconds
 Using device: cuda
 gpu array script took 235.99200344085693 seconds
+
+# matlab
+Using nboot:
+      100000
+
+Original Script, Compile on Execution
+Elapsed time is 274.250803 seconds.
+GPU Script, Compile on Execution
+(out of memory)
+
 ```
 
 
