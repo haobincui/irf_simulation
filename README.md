@@ -13,11 +13,15 @@ $ python script_test_bench.py
 ## test reuslts
 - test1, nboot = 399
 ```bash
+# python
 Using nboot: 399
 Loaded inputs
 original script took 1.5724365711212158 seconds
 Using device: cuda
 gpu array script took 1.5913772583007812 seconds
+
+
+
 ```
 
 - test2, nboot = 10_000
@@ -28,6 +32,7 @@ original script took 39.14391088485718 seconds
 Using device: cuda
 gpu array script took 23.954208850860596 seconds
 ```
+
 
 -test3, nboot = 100_000 (8GB)
 ```bash
