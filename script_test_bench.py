@@ -40,14 +40,3 @@ s = time.time()
 res_multi_gpu = IRF_simulations_with_GARCH_multi_gpu(y, x, nlag, nboot, S, C, Hbar)
 e = time.time()
 print(f'multi gpu script took {e - s} seconds')
-result_is_equal = False
-for i in range(len(res_multi_gpu)):
-    result_is_equal = compare_results(res_gpu_array[i], res_multi_gpu[i])
-    if not result_is_equal:
-        print(f'results are not equal for {i}')
-        continue
-
-if result_is_equal:
-    print('al  results are equal')
-else:
-    print('results are not equal')

@@ -1,3 +1,5 @@
+import time
+
 import torch
 import numpy as np
 
@@ -74,7 +76,6 @@ def IRF_simulations_with_GARCH_multi_gpu(y: np.ndarray, x: np.ndarray, nlag: int
     B2 = run_simulation_on_device(y, x, C, Hbar, draws2, device2, nlag, S, neq)
 
     # Combine results from both GPUs
-    B = B1 + B2
 
     # Optionally, convert tensors in results back to CPU for further processing
     for i in range(len(B)):
