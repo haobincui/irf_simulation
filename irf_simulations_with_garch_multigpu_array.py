@@ -78,6 +78,7 @@ def IRF_simulations_with_GARCH_multi_gpu(y: np.ndarray, x: np.ndarray, nlag: int
     # Combine results from both GPUs
 
     # Optionally, convert tensors in results back to CPU for further processing
+    B = B1 + B2
     for i in range(len(B)):
         for key in B[i]:
             B[i][key] = B[i][key].cpu().numpy()
