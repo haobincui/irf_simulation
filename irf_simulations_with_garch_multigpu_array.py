@@ -49,9 +49,11 @@ def IRF_simulations_with_GARCH_mutili_pytorch(y: np.ndarray, x: np.ndarray, nlag
     if torch.cuda.is_available():
         device1 = torch.device("cuda:0")
         device2 = torch.device("cuda:1")
+        print('Using device: cuda: 0, 1')
     else:
         device1 = torch.device("cpu")
         device2 = torch.device("cpu")
+        print('Using device: cuda')
 
     y = torch.tensor(y, dtype=torch.float64)
     x = torch.tensor(x, dtype=torch.float64)
