@@ -44,7 +44,7 @@ def run_simulation_on_device(y, x, C, Hbar, draws, device, nlag, S, neq):
     return B
 
 
-def IRF_simulations_with_GARCH_mutili_pytorch(y: np.ndarray, x: np.ndarray, nlag: int, nboot: int, S: int, C: np.ndarray,
+def IRF_simulations_with_GARCH_multi_gpu(y: np.ndarray, x: np.ndarray, nlag: int, nboot: int, S: int, C: np.ndarray,
                                        Hbar: np.ndarray):
     if torch.cuda.is_available():
         device1 = torch.device("cuda:0")

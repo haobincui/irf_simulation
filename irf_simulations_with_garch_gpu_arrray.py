@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 
-def IRF_simulations_with_GARCH_pytorch(y: np.ndarray, x: np.ndarray, nlag: int, nboot: int,
+def IRF_simulations_with_GARCH_gpu(y: np.ndarray, x: np.ndarray, nlag: int, nboot: int,
                                S: int, C: np.ndarray, Hbar: np.ndarray) -> dict:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print('Using device:', device)

@@ -1,11 +1,11 @@
 import time
 
 import scipy.io as sio
-import numpy as np
 
-from irf_simulations_with_garch_gpu_arrray import IRF_simulations_with_GARCH_pytorch
+from compare_results import compare_results
 from irf_simulations_with_garch import IRF_simulations_with_GARCH
-from irf_simulations_with_garch_multigpu_array import IRF_simulations_with_GARCH_mutili_pytorch
+from irf_simulations_with_garch_gpu_arrray import IRF_simulations_with_GARCH_gpu
+from irf_simulations_with_garch_multigpu_array import IRF_simulations_with_GARCH_multi_gpu
 
 # raw_data = h5py.File('./input/testBenchDataSimulations_sample.mat', 'r')
 
@@ -31,12 +31,23 @@ e = time.time()
 print(f'original script took {e - s} seconds')
 
 s = time.time()
-res_gpu_array = IRF_simulations_with_GARCH_pytorch(y, x, nlag, nboot, S, C, Hbar)
+res_gpu_array = IRF_simulations_with_GARCH_gpu(y, x, nlag, nboot, S, C, Hbar)
 e = time.time()
 print(f'gpu array script took {e - s} seconds')
 
 
 s = time.time()
-res_multi_gpu = IRF_simulations_with_GARCH_mutili_pytorch(y, x, nlag, nboot, S, C, Hbar)
+res_multi_gpu = IRF_simulations_with_GARCH_multi_gpu(y, x, nlag, nboot, S, C, Hbar)
 e = time.time()
 print(f'multi gpu script took {e - s} seconds')
+result_is_equal = False
+for i in range(len(res_multi_gpu)):
+    result_is_equal = compare_results(res_gpu_array[i], res_multi_gpu[i])
+    if not result_is_equal:
+        print(f'results are not equal for {i}')
+        continue
+
+if result_is_equal:
+    print('al  results are equal')
+else:
+    print('results are not equal')
