@@ -5,6 +5,7 @@ import numpy as np
 
 from irf_simulations_with_garch_gpu_arrray import IRF_simulations_with_GARCH_pytorch
 from irf_simulations_with_garch import IRF_simulations_with_GARCH
+from irf_simulations_with_garch_multigpu_array import IRF_simulations_with_GARCH_mutili_pytorch
 
 # raw_data = h5py.File('./input/testBenchDataSimulations_sample.mat', 'r')
 
@@ -33,3 +34,9 @@ s = time.time()
 res_gpu_array = IRF_simulations_with_GARCH_pytorch(y, x, nlag, nboot, S, C, Hbar)
 e = time.time()
 print(f'gpu array script took {e - s} seconds')
+
+
+s = time.time()
+res_multi_gpu = IRF_simulations_with_GARCH_mutili_pytorch(y, x, nlag, nboot, S, C, Hbar)
+e = time.time()
+print(f'multi gpu script took {e - s} seconds')

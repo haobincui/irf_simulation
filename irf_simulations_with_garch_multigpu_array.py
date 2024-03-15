@@ -1,71 +1,82 @@
-import numpy as np
 import torch
+import numpy as np
 
 
-def IRF_simulations_with_GARCH_pytorch(y: np.ndarray, x: np.ndarray, nlag: int, nboot: int,
-                               S: int, C: np.ndarray, Hbar: np.ndarray) -> dict:
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def run_simulation_on_device(y, x, C, Hbar, draws, device, nlag, S, neq):
+    y = y.to(device)
+    x = x.to(device)
+    C = C.to(device)
+    Hbar = Hbar.to(device)
+    draws = draws.to(device)
+
+    iQbar = torch.linalg.inv(torch.linalg.cholesky(Hbar))
+    Qt = torch.zeros((S, neq, neq), device=device, dtype=torch.float64)
+    for s in range(S):
+        Ht = C[s, :, :]
+        H0t = torch.matmul(Ht, torch.linalg.inv(Hbar))
+        l, _ = torch.linalg.eig(H0t)
+        ml = torch.min(l.real)
+        if ml > 0:
+            Qt[s, :, :] = torch.linalg.cholesky(H0t)
+        else:
+            Qt[s, :, :] = torch.eye(neq, device=device)
+
+    B = [{'IRF': torch.zeros((S, neq, neq), device=device, dtype=torch.float64),
+          'IRF_No_GARCH': torch.zeros((S, neq, neq), device=device, dtype=torch.float64),
+          'IRF_GARCH': torch.zeros((S, neq, neq), device=device, dtype=torch.float64)} for _ in range(draws.shape[1])]
+
+    for i in range(draws.shape[1]):
+        yi = y[draws[:, i], :]
+        xi = x[draws[:, i], :]
+        bi = torch.linalg.lstsq(yi, xi).solution
+        AR_Terms = bi[:neq, :neq * nlag]
+        M = torch.vstack([AR_Terms, torch.eye(neq * nlag, device=device)])
+        M = torch.hstack([M, torch.zeros((neq * nlag + neq, neq), device=device)])
+
+        for s in range(S):
+            mu_irf = torch.matrix_power(M, s + 1)[:neq, :neq]
+            irf_qbar = torch.matmul(mu_irf, iQbar)
+            irf_qt = torch.matmul(irf_qbar, torch.linalg.inv(Qt[s, :, :]))
+            B[i]['IRF'][s, :, :] = mu_irf
+            B[i]['IRF_GARCH'][s, :, :] = irf_qt
+            B[i]['IRF_No_GARCH'][s, :, :] = irf_qbar
+
+    return B
+
+
+def IRF_simulations_with_GARCH_mutili_pytorch(y: np.ndarray, x: np.ndarray, nlag: int, nboot: int, S: int, C: np.ndarray,
+                                       Hbar: np.ndarray):
     if torch.cuda.is_available():
-        device_0 = torch.device("cuda:0")
-        device_1 = torch.device("cuda:1")
-        devices = [device_0, device_1]
-
-        print('Using device: cuda')
+        device1 = torch.device("cuda:0")
+        device2 = torch.device("cuda:1")
     else:
-        device = torch.device("cpu")
-        devices = [device]
-        print('Using device: cpu')
+        device1 = torch.device("cpu")
+        device2 = torch.device("cpu")
+
+    y = torch.tensor(y, dtype=torch.float64)
+    x = torch.tensor(x, dtype=torch.float64)
+    C = torch.tensor(C, dtype=torch.float64)
+    Hbar = torch.tensor(Hbar, dtype=torch.float64)
     T, neq = y.shape
 
-    for device in devices:
-        y = torch.tensor(y, dtype=torch.float64).to(device)
-        x = torch.tensor(x, dtype=torch.float64).to(device)
-        C = torch.tensor(C, dtype=torch.float64).to(device)
-        Hbar = torch.tensor(Hbar, dtype=torch.float64).to(device)
+    torch.manual_seed(0)
+    draws = torch.randint(0, T, (T, nboot))
 
-        torch.manual_seed(0)
-        draws = torch.randint(0, T, (T, nboot // 2), device=device)
+    # Split draws between two GPUs
+    nboot_per_device = nboot // 2
+    draws1 = draws[:, :nboot_per_device]
+    draws2 = draws[:, nboot_per_device:]
 
-    # rng = np.random.default_rng(np.random.MT19937(seed=0))
-    # draws = rng.integers(0, T, (T, nboot))  # T * nboot
-    # draws = torch.tensor(draws, dtype=torch.int64).to(device)
+    # Run simulations on each GPU
+    B1 = run_simulation_on_device(y, x, C, Hbar, draws1, device1, nlag, S, neq)
+    B2 = run_simulation_on_device(y, x, C, Hbar, draws2, device2, nlag, S, neq)
 
-        iQbar = torch.linalg.inv(torch.linalg.cholesky(Hbar))
-        Qt = torch.zeros((S, neq, neq), device=device).to(dtype=torch.float64)
-        for s in range(S):
-            Ht = C[s, :, :]
-            H0t = torch.matmul(Ht, torch.linalg.inv(Hbar))
-            l, _ = torch.linalg.eig(H0t)
-            ml = torch.min(l.real)
-            if ml > 0:
-                Qt[s, :, :] = torch.linalg.cholesky(H0t)
-            else:
-                Qt[s, :, :] = torch.eye(neq, device=device)
+    # Combine results from both GPUs
+    B = B1 + B2
 
-        B = [{'IRF': torch.zeros((S, neq, neq), device=device).to(dtype=torch.float64),
-              'IRF_No_GARCH': torch.zeros((S, neq, neq), device=device).to(dtype=torch.float64),
-              'IRF_GARCH': torch.zeros((S, neq, neq), device=device).to(dtype=torch.float64)}
-             for _ in range(nboot)]
-
-        for i in range(nboot//2):
-            yi = y[draws[:, i], :]
-            xi = x[draws[:, i], :]
-            bi = torch.linalg.lstsq(yi, xi).solution
-            AR_Terms = bi[:neq, :neq * nlag]
-            M = torch.vstack([AR_Terms, torch.eye(neq * nlag, device=device)])
-            M = torch.hstack([M, torch.zeros((neq * nlag + neq, neq), device=device)])
-
-            for s in range(S):
-                mu_irf = torch.matrix_power(M, s + 1)[:neq, :neq]
-                irf_qbar = torch.matmul(mu_irf, iQbar)
-                irf_qt = torch.matmul(irf_qbar, torch.linalg.inv(Qt[s, :, :]).to(dtype=torch.float64))
-                B[i]['IRF'][s, :, :] = mu_irf
-                B[i]['IRF_GARCH'][s, :, :] = irf_qt
-                B[i]['IRF_No_GARCH'][s, :, :] = irf_qbar
-
-    # Convert results back to CPU
-        for i in range(nboot):
-            for key in B[i]:
-                B[i][key] = B[i][key].cpu().numpy()
+    # Optionally, convert tensors in results back to CPU for further processing
+    for i in range(len(B)):
+        for key in B[i]:
+            B[i][key] = B[i][key].cpu().numpy()
 
     return B
